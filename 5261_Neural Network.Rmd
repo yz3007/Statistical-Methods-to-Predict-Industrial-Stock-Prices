@@ -1,0 +1,91 @@
+---
+title: "NeuralNetwork"
+output:
+  word_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+
+
+## load data:
+setwd("../output")
+library(neuralnet)
+library(readr) 
+load("data.Rdata")
+
+
+
+
+NeuralNetwork=function(field){
+## choose a field
+Banks=data[data$GICS.Ind.Grp.Name==field,]
+
+## delete the column with too many NAs
+t=apply(Banks,2,function(x) sum(is.na(x)))/nrow(Banks)
+index=which(t>0.8) 
+Banks=Banks[,-index]
+Date=Banks$Date
+
+rm(index)
+
+## replace NA with mean
+Banks=apply(Banks[,!colnames(Banks)%in%c("EQUITY","Date","GICS.Ind.Grp.Name")],2,function(x) {
+  replace(x,is.na(x),mean(x,na.rm=TRUE))})
+Banks=as.data.frame(Banks)
+##max and minimum of return
+max=max(Banks$RETURN)
+min=min(Banks$RETURN)
+## scale:
+
+maxs=apply(Banks,2,max)
+mins=apply(Banks,2,min)
+Banks=scale(Banks,center=mins,scale=maxs-mins)
+## convert back to data frame
+Banks=as.data.frame(Banks)
+Banks$Date=Date
+rm(Date)
+
+
+## get training data and test data(2016,12)
+training=Banks[Banks$Date!="12,2016",]
+test=Banks[Banks$Date=="12,2016",]
+
+test$Date=NULL
+training$Date=NULL
+
+
+## neurual network:
+n <- colnames(training)
+f <- as.formula(paste("RETURN ~", paste(n[!n %in% "RETURN"], collapse = " + ")))
+
+nn <- neuralnet(f,data=training,hidden=c(3,2),linear.output=T,threshold = 0.01)
+
+##test:
+
+
+pr.nn <- compute(nn,test[,1:ncol(test)-1])
+
+pr.nn <- pr.nn$net.result
+
+test_origin=test$RETURN*(max-min)+min
+predict.orgin=pr.nn*(max-min)+min
+
+test_result=ifelse(test_origin>0.1,1,0)
+prediction_result=ifelse(predict.orgin>0.1,1,0)
+
+return(accuracty=sum(test_result==prediction_result)/length(test_result))
+
+}
+options=head(names(sort(table(data$GICS.Ind.Grp.Name),decreasing = TRUE)),6)
+
+final=sapply(options,NeuralNetwork)
+final
+
+
+
+```

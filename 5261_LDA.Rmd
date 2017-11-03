@@ -1,0 +1,62 @@
+---
+title: "5261_LDA"
+author: "Jiahao Zhang"
+date: "April 26, 2017"
+output: pdf_document
+---
+## About LDA:
+Linear discriminant analysis (LDA) is a generalization of Fisher's linear discriminant, a method used in statistics, pattern recognition and machine learning to find a linear combination of features that characterizes or separates two or more classes of objects or events. Assumptions of LDA are:
+Gaussian Distribution. The standard implementation of the model assumes a Gaussian distribution of the input variables. Consider reviewing the univariate distributions of each attribute and using transforms to make them more Gaussian-looking (e.g. log and root for exponential distributions and Box-Cox for skewed distributions).
+
+Same Variance. LDA assumes that each input variable has the same variance. It is almost always a good idea to standardize your data before using LDA so that it has a mean of 0 and a standard deviation of 1.
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+setwd("/Users/ZHANGJIAHAO/Desktop/R-studio")
+data<-read.csv("data.csv")
+library(caret)
+set.seed(1)
+classer <-function(industry){
+  Banks=data[data$GICS.Ind.Grp.Name==industry,]
+  t=apply(Banks,2,function(x) sum(is.na(x)))/nrow(Banks)
+  index=which(t>0.8) #delete the column with too many NAs
+  Banks=Banks[,-index]
+  
+  
+  
+  Banks=data.frame(apply(Banks[,!colnames(Banks)%in%c("EQUITY","Date","GICS.Ind.Grp.Name")],2,function(x) {
+    replace(x,is.na(x),mean(x,na.rm=TRUE))})) ## replace with mean
+  Banks$RETURN<-ifelse(Banks$RETURN>0.1,"Good","Bad")
+  Banks$RETURN <- as.factor(Banks$RETURN)
+  cctrl1 <- trainControl(method = "cv", number = 3, returnResamp = "all",
+                         classProbs = TRUE, 
+                         summaryFunction = twoClassSummary)
+  
+  index <- sample(1:nrow(Banks),round(0.9*nrow(Banks)))
+  train.cv <- Banks[index,]
+  test.cv <- Banks[-index,]
+  test_class_cv_form <- train(RETURN ~ ., data = train.cv, 
+                              method = "lda", 
+                              trControl = cctrl1,
+                              metric = "ROC", 
+                              preProc = c("center", "scale"))
+  test_class_pred_form <- predict(test_class_cv_form, test.cv[, -ncol(test.cv)])
+  error <- mean(test_class_pred_form==test.cv$RETURN)
+  return(list(error))
+  
+}
+list.in <- list("Real Estate","Health Care Equipment & Services","Software & Services","Pharmaceuticals, Biotechnology & Life Sciences",
+                "Capital Goods",
+                "Banks")
+names(list.in)<-c("Real Estate","Health Care Equipment & Services","Software & Services","Pharmaceuticals, Biotechnology & Life Sciences",
+                  "Capital Goods",
+                  "Banks")
+result <- unlist(lapply(list.in,classer))
+accuracy <- data.frame(result)
+accuracy
+
+
+
+```

@@ -1,0 +1,202 @@
+---
+title: "5261 Project"
+author: "Tangming Li_tl2750"
+date: "2017Äê4ÔÂ23ÈÕ"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+1. 
+
+```{r}
+load("data.Rdata")
+data[,50]<- data[,49]>0.1
+names(data)[names(data)=="V50"]<- "GOOD"
+Indus<- sort(table(data[,48]), T)
+Indus.top<- Indus[1:6]
+Indus.top
+
+
+## choose a field
+Banks<- data[data[,48]=="Banks",]
+
+t=apply(Banks,2,function(x) sum(is.na(x)))/nrow(Banks)
+index=which(t>0.6) #delete the column with too many NAs
+Banks=Banks[,-index]
+
+Dates<- Banks$Date
+
+Banks<- apply(Banks[,!colnames(Banks)%in%c("EQUITY","Date","GICS.Ind.Grp.Name")],2,function(x) {
+  replace(x,is.na(x),mean(x,na.rm=TRUE))}) ## replace with mean
+
+Banks<- as.data.frame(Banks)
+
+training<- Banks[Dates!="12,2016",]
+test<- Banks[Dates=="12,2016",]
+
+library(rpart)
+fit<- rpart(formula = GOOD~., data = training[,-(ncol(Banks)-1)]) # , method = "class"
+printcp(fit)
+
+plot(fit, uniform=TRUE, main="Classification Tree")
+text(fit, use.n=TRUE, all=TRUE, cex=.8)
+r.test<- predict(fit,  newdata = test[,-(ncol(Banks)-1)])
+r.test<- r.test > 0.5
+
+cat("The Predictive precision of the price trend of the stocks for Banks is",mean(r.test==test$GOOD))
+
+
+
+
+
+
+## choose another field
+Capital<- data[data[,48]=="Capital Goods",]
+
+t=apply(Capital,2,function(x) sum(is.na(x)))/nrow(Capital)
+index=which(t>0.6) #delete the column with too many NAs
+Capital=Capital[,-index]
+
+Dates<- Capital$Date
+
+Capital<- apply(Capital[,!colnames(Capital)%in%c("EQUITY","Date","GICS.Ind.Grp.Name")],2,function(x) {
+  replace(x,is.na(x),mean(x,na.rm=TRUE))}) ## replace with mean
+
+Capital<- as.data.frame(Capital)
+
+training<- Capital[Dates!="12,2016",]
+test<- Capital[Dates=="12,2016",]
+
+fit<- rpart(GOOD~., data = training[, -(ncol(Capital)-1)])
+printcp(fit)
+
+plot(fit, uniform=TRUE, main="Classification Tree")
+text(fit, use.n=TRUE, all=TRUE, cex=.8) 
+r.test<- predict(fit,  newdata = test[,-(ncol(Capital)-1)])
+r.test<- r.test > 0.5
+
+cat("The Predictive precision of the price trend of the stocks for Capital Goods is",mean(r.test==test$GOOD))
+
+
+## choose another field
+PBLS<- data[data[,48]=="Pharmaceuticals, Biotechnology & Life Sciences",]
+
+t=apply(PBLS,2,function(x) sum(is.na(x)))/nrow(PBLS)
+index=which(t>0.6) #delete the column with too many NAs
+PBLS=PBLS[,-index]
+
+Dates<- PBLS$Date
+
+PBLS<- apply(PBLS[,!colnames(PBLS)%in%c("EQUITY","Date","GICS.Ind.Grp.Name")],2,function(x) {
+  replace(x,is.na(x),mean(x,na.rm=TRUE))}) ## replace with mean
+
+PBLS<- as.data.frame(PBLS)
+
+training<- PBLS[Dates!="12,2016",]
+test<- PBLS[Dates=="12,2016",]
+
+fit<- rpart(GOOD~., data = training[, -(ncol(PBLS)-1)])
+printcp(fit)
+
+plot(fit, uniform=TRUE, main="Classification Tree")
+text(fit, use.n=TRUE, all=TRUE, cex=.8) 
+r.test<- predict(fit,  newdata = test[,-(ncol(PBLS)-1)])
+r.test<- r.test > 0.5
+
+cat("The Predictive precision of the price trend of the stocks for Pharmaceuticals, Biotechnology & Life Sciences is",mean(r.test==test$GOOD))
+
+
+## choose another field
+Software<- data[data[,48]=="Software & Services",]
+
+t=apply(Software,2,function(x) sum(is.na(x)))/nrow(Software)
+index=which(t>0.6) #delete the column with too many NAs
+Software=Software[,-index]
+
+Dates<- Software$Date
+
+Software<- apply(Software[,!colnames(Software)%in%c("EQUITY","Date","GICS.Ind.Grp.Name")],2,function(x) {
+  replace(x,is.na(x),mean(x,na.rm=TRUE))}) ## replace with mean
+
+Software<- as.data.frame(Software)
+
+training<- Software[Dates!="12,2016",]
+test<- Software[Dates=="12,2016",]
+
+fit<- rpart(GOOD~., data = training[, -(ncol(Software)-1)])
+printcp(fit)
+
+plot(fit, uniform=TRUE, main="Classification Tree")
+text(fit, use.n=TRUE, all=TRUE, cex=.8) 
+r.test<- predict(fit,  newdata = test[,-(ncol(Software)-1)])
+r.test<- r.test > 0.5
+
+cat("The Predictive precision of the price trend of the stocks for Software & Services is",mean(r.test==test$GOOD))
+
+
+## choose another field
+HCES<- data[data[,48]=="Health Care Equipment & Services",]
+
+t=apply(HCES,2,function(x) sum(is.na(x)))/nrow(HCES)
+index=which(t>0.6) #delete the column with too many NAs
+HCES=HCES[,-index]
+
+Dates<- HCES$Date
+
+HCES<- apply(HCES[,!colnames(HCES)%in%c("EQUITY","Date","GICS.Ind.Grp.Name")],2,function(x) {
+  replace(x,is.na(x),mean(x,na.rm=TRUE))}) ## replace with mean
+
+HCES<- as.data.frame(HCES)
+
+training<- HCES[Dates!="12,2016",]
+test<- HCES[Dates=="12,2016",]
+
+fit<- rpart(GOOD~., data = training[, -(ncol(HCES)-1)])
+printcp(fit)
+
+plot(fit, uniform=TRUE, main="Classification Tree")
+text(fit, use.n=TRUE, all=TRUE, cex=.8) 
+r.test<- predict(fit,  newdata = test[,-(ncol(HCES)-1)])
+r.test<- r.test > 0.5
+
+cat("The Predictive precision of the price trend of the stocks for Health Care Equipment & Services is",mean(r.test==test$GOOD))
+
+
+
+
+
+## choose another field
+RE<- data[data[,48]=="Real Estate",]
+
+t=apply(RE,2,function(x) sum(is.na(x)))/nrow(RE)
+index=which(t>0.6) #delete the column with too many NAs
+RE=RE[,-index]
+
+Dates<- RE$Date
+
+RE<- apply(RE[,!colnames(RE)%in%c("EQUITY","Date","GICS.Ind.Grp.Name")],2,function(x) {
+  replace(x,is.na(x),mean(x,na.rm=TRUE))}) ## replace with mean
+
+RE<- as.data.frame(RE)
+training<- RE[Dates!="12,2016",]
+test<- RE[Dates=="12,2016",]
+
+fit<- rpart(formula= GOOD~., data =training[,-(ncol(RE)-1)])
+
+printcp(fit)
+
+plot(fit, uniform=TRUE, main="Classification Tree")
+text(fit, use.n=TRUE, all=TRUE, cex=.8)
+r.test<- predict(fit,  newdata = test[,-(ncol(RE)-1)])
+r.test<- r.test > 0.5
+
+cat("The Predictive precision of the price trend of the stocks for Real Estate is",mean(r.test==test$GOOD))
+
+
+
+```
+

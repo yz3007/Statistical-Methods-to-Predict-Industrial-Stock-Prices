@@ -1,0 +1,61 @@
+---
+title: "Project5206"
+author: "Yufei Zhao"
+date: "4/25/2017"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library('e1071')
+load('data.Rdata')
+```
+
+```{r}
+options <- head(names(sort(table(data$GICS.Ind.Grp.Name), decreasing = TRUE)),6)
+```
+
+```{r}
+naive <- function(class){
+  # cat means categories
+  cat <- data[data$GICS.Ind.Grp.Name==class,]
+  t <- apply(cat,2,function(x) sum(is.na(x)))/nrow(cat)
+  index <- which(t>0.8) #delete the column with too many NAs
+  cat <- cat[,-index]
+  date <-  cat[,2]
+  
+  cat <- apply(cat[,!colnames(cat)%in%c("EQUITY","Date","GICS.Ind.Grp.Name")],2,function(x) {
+    replace(x,is.na(x),mean(x,na.rm=TRUE))}) ## replace with mean
+  
+  cat <- data.frame(cat)
+  cat$CLASS <- ifelse(cat$RETURN >= 0.1, 1,0)
+  train <- cat[date != "12,2016",]
+  test <- cat[date == "12,2016",]
+  
+  model <- naiveBayes(train[,1:(dim(train)[2]-2)], as.factor(train[,dim(train)[2]]))
+  result <- predict(model,test[,1:(dim(train)[2]-2)])
+  
+  return(sum(test[,ncol(test)] == result)/length(result))
+}
+```
+
+```{r}
+final <- sapply(options,naive)
+final
+```
+
+
+
+
+
+
+
+
+
+
+
+
+

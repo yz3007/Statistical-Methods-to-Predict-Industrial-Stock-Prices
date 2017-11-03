@@ -1,0 +1,74 @@
+---
+title: "Logistic"
+author: "Hongjie Ren"
+date: "2017Äê5ÔÂ8ÈÕ"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+load("C:/Hongjie/5261 Statistical methods in Finance/Zhiliang Ying/project/data.Rdata")
+
+logistic_model <- function(name){
+
+#pick bank data
+industry <- data[data$GICS.Ind.Grp.Name==name,]
+
+## choose a field
+t=apply(industry,2,function(x) sum(is.na(x)))/nrow(industry)
+index=which(t>0.8) #delete the column with too many NAs
+industry=industry[,-index]
+rm(index)
+
+
+## replace with mean
+date <- industry[,"Date"]
+name <- industry[,"EQUITY"]
+industry=apply(industry[,!colnames(industry)%in%c("EQUITY","Date","GICS.Ind.Grp.Name")],2,function(x) {
+  replace(x,is.na(x),mean(x,na.rm=TRUE))})
+industry <- data.frame(industry)
+industry$response <- ifelse(industry$RETURN>0.1,1,0)
+
+#remove return
+industry <- industry[,-(ncol(industry)-1)]
+
+#divide into training and test
+index <- which(date=="12,2016")
+train <- industry[-index,]
+test <- industry[index,]
+rm(index)
+
+## using logistic model
+model <- glm(response ~.,family=binomial(link='logit'),data=train)
+summary(model)
+#Sales to tot asset,px to book ratio, eqy dps, net income margin adjusted, ustbtot, pitlyoy, usurtot,fsi,hgus,cpi yoy, velom1,velom2
+
+# now we test the model
+
+#tables <- anova(model, test="Chisq")
+#library(pscl)
+#r_square <- pR2(model)
+
+
+# prediction
+
+fitted.results <- predict(model,newdata=test,type='response')
+fitted.results <- ifelse(fitted.results > 0.5,1,0)
+misClasificError <- mean(fitted.results != test$response)
+return(1-misClasificError)
+}
+
+# now we input 6 industries
+industries <- data.frame(c("Real Estate","Health Care Equipment & Services","Software & Services","Pharmaceuticals, Biotechnology & Life Sciences","Capital Goods","Banks"))
+rate <- apply(industries,1,logistic_model)
+results <- cbind(industries,rate)
+colnames(results) <- c("Industry","Accuracy")
+results
+
+```
+

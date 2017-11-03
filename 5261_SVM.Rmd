@@ -1,0 +1,31 @@
+---
+title: '5261'
+author: "Yangyu Niu"
+date: "2017/4/25"
+output: pdf_document
+---
+
+```{r}
+ library(e1071)
+load("/Users/niuyangyu/Downloads/data.Rdata")
+options<-head(names(sort(table(data$GICS.Ind.Grp.Name), decreasing = TRUE)),6)
+
+svm_rate<-function(class){
+Banks=data[data$GICS.Ind.Grp.Name==class,]
+Banks<-data.frame(Banks)
+date <- Banks[,2]
+t=apply(Banks,2,function(x) sum(is.na(x)))/nrow(Banks)
+index=which(t>0.8) #delete the column with too many NAs
+Banks=Banks[,-index]
+Banks=apply(Banks[,!colnames(Banks)%in%c("EQUITY","Date","GICS.Ind.Grp.Name")],2,function(x) {replace(x,is.na(x),mean(x,na.rm=TRUE))}) ## replace with mean
+train <- Banks[date != "12,2016",]
+test <- Banks[date == "12,2016",]
+model <- svm(RETURN ~.,train,cost=100,gamma=0.01)
+result <- predict(model,test)
+re<-mean((result>=0.1)&(test[,dim(Banks)[2]]>=0.1))/mean(result>=0.1)
+return (mean(result>=0.1))
+}
+final <- sapply(options,svm_rate) 
+final
+```
+

@@ -1,0 +1,93 @@
+---
+title: "5261 Project"
+author: "Peilin Qiu (pq2128)"
+date: "4/25/2017"
+output: pdf_document
+---
+
+```{r}
+load("data.Rdata")
+set.seed(1)
+data1 <- data
+target_list <- unique(data1$GICS.Ind.Grp.Name)
+target <- c(target_list[1], target_list[4], target_list[5], target_list[7], target_list[10], target_list[13])
+
+rf_result <- function(x){
+  data.target <- data1[data1$GICS.Ind.Grp.Name == unique(data1$GICS.Ind.Grp.Name)[x],]
+  t = apply(data.target, 2, function(x){sum(is.na(x))/nrow(data.target)})
+  index = which(t>0.8)
+  data.target = data.target[,-index]
+  
+#for(i in 1:nrow(data.target)){
+#    if (data.target$RETURN[i] >= min(data.target$RETURN) && data.target$RETURN[i] < quantile(data.target$RETURN)[2]){
+#      data.target$RETURN[i] = 1
+#    }
+#    if (data.target$RETURN[i] >= quantile(data.target$RETURN)[2] && data.target$RETURN[i] < quantile(data.target$RETURN)[3]){
+ #     data.target$RETURN[i] = 2
+#    }
+#    if (data.target$RETURN[i] >= quantile(data.target$RETURN)[3] && data.target$RETURN[i] < quantile(data.target$RETURN)[4]){
+ #     data.target$RETURN[i] = 3
+ #   }
+ #   if (data.target$RETURN[i] >= quantile(data.target$RETURN)[4] && data.target$RETURN[i] <= quantile(data.target$RETURN)[5]){
+ #     data.target$RETURN[i] = 4
+ #   }
+#  }
+  data.target$RETURN = ifelse(data.target$RETURN >= 0.1, 1, 0)
+  testset <- data.target[data.target$Date == "12,2016",]
+  trainset <- data.target[data.target$Date != "12,2016",]
+  
+  data.test <- data.frame(apply(testset[,!colnames(testset)%in%c("EQUITY", "Date", "GICS.Ind.Grp.Name", "CHG_PCT_PERIOD")],2, function(x){replace(x,is.na(x),mean(x,na.rm = TRUE))}))
+  data.train <- data.frame(apply(trainset[,!colnames(trainset)%in%c("EQUITY", "Date", "GICS.Ind.Grp.Name","CHG_PCT_PERIOD")],2, function(x){replace(x,is.na(x),mean(x,na.rm = TRUE))}))
+  
+  library(randomForest)
+  rf <- randomForest(data.train[,-ncol(data.train)], as.factor(data.train$RETURN), ntree = 500)
+  print(rf)
+  round(importance(rf),2)
+  result <- predict(rf,data.test[,-ncol(data.test)])
+  comparison <- ifelse(result == data.test$RETURN, 1, 0)
+  return(mean(comparison))
+}
+
+result1 <- rf_result(1)
+result2 <- rf_result(4)
+result3 <- rf_result(5)
+result4 <- rf_result(7)
+result5 <- rf_result(10)
+result6 <- rf_result(13)
+Accuracy <- c(result1, result2, result3, result4, result5, result6)
+Industry <- c("Health Care Equipment & Services", "Capital Goods", "Real Estate", "Banks", "Software & Services", "Pharmaceuticals, Biotechnology & Life Sciences")
+
+final <- data.frame(Industry, Accuracy)
+final
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
